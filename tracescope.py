@@ -6,7 +6,7 @@ import socket
 import colorama
 from colorama import Fore, Style
 
-# Attempt to import Pillow for image metadata forensics
+# Attempt to import Pillow for image metadata analysis
 try:
     from PIL import Image
     from PIL.ExifTags import TAGS, GPSTAGS
@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAS_PIL = False
 
-# Enable command history navigation and Tab auto-completion across the CLI
+# Enable command history (Up/Down arrows) and Tab auto-completion across the CLI
 try:
     import readline
     import glob
@@ -298,7 +298,7 @@ def audit_listening_ports():
                 lines = f.readlines()[1:]
                 for line in lines:
                     parts = line.strip().split()
-                    if len(parts) >= 4 and parts[3] == '0A':  # 0A represents TCP_LISTEN
+                    if len(parts) >= 4 and parts[3] == '0A':  # 0A = TCP_LISTEN
                         local_addr = parts[1]
                         ip_hex, port_hex = local_addr.split(':')
                         port = int(port_hex, 16)
@@ -374,15 +374,13 @@ def check_single_file_signature(full_path, target_extensions):
         if not header:
             return False, None
 
-        # Check for Windows PE executable header (MZ)
         if header.startswith(b'MZ'):
-            msg = (f"{Fore.RED}{Style.BRIGHT}[!] MISMATCH DETECTED (EXE in Disguise):\n"
+            msg = (f"{Fore.RED}{Style.BRIGHT}[!] MISMATCH DETECTED:\n"
                    f"    File: {full_path}\n"
                    f"    Claimed Extension: {ext}\n"
-                   f"    Actual Signature : Windows Executable (Magic: MZ)")
+                   f"    Actual Signature : Windows Executable (.exe)")
             return True, msg
 
-        # Check for Linux ELF binary header (\x7fELF)
         elif header.startswith(b'\x7fELF'):
             msg = (f"{Fore.RED}{Style.BRIGHT}[!] MISMATCH DETECTED (ELF Binary in Disguise):\n"
                    f"    File: {full_path}\n"
@@ -390,7 +388,6 @@ def check_single_file_signature(full_path, target_extensions):
                    f"    Actual Signature : Linux Executable (Magic: \\x7fELF)")
             return True, msg
 
-        # Check for executable scripts disguised as images or documents
         elif (ext in ['.png', '.jpg', '.jpeg', '.pdf']) and (header.startswith(b'#!') or header.startswith(b'<?php')):
             msg = (f"{Fore.YELLOW}{Style.BRIGHT}[!] SUSPICIOUS SCRIPT DISGUISE:\n"
                    f"    File: {full_path}\n"
@@ -414,7 +411,7 @@ def validate_file_extensions(target_path):
         '.txt', '.csv', '.docx', '.xlsx', '.zip'
     }
 
-    # Case 1: Target is a single file
+    # 1. Target is a single file
     if os.path.isfile(target_path):
         print(Fore.CYAN + f"\n[*] Validating file: {target_path}...")
         is_mismatch, alert_msg = check_single_file_signature(target_path, target_extensions)
@@ -424,7 +421,7 @@ def validate_file_extensions(target_path):
             print(Fore.GREEN + f"[+] Legitimate File: Header matches expected format for {os.path.basename(target_path)}.")
         return
 
-    # Case 2: Target is a directory
+    # 2. Target is an entire directory
     print(Fore.CYAN + f"\n[*] Validating file signatures & extensions in: {target_path}...")
     flagged_count = 0
 
@@ -441,7 +438,7 @@ def validate_file_extensions(target_path):
     else:
         print(Fore.RED + Style.BRIGHT + f"\n[!] Audit finished: Detected {flagged_count} file(s) with mismatched signatures!")
 
-def run_validator_module():
+def run_hunter_module():
     print(f"\n{Fore.GREEN}[*] Loaded Module: Extension Validator{Fore.RESET}")
     print(f"Type {Fore.YELLOW}'show options'{Fore.RESET} or {Fore.RED}'back'{Fore.RESET}.\n")
     while True:
@@ -458,9 +455,7 @@ def run_validator_module():
                 print(f"  {Fore.GREEN}scan <FILE/DIR>{Fore.RESET}     Validate file header vs extension (single file or full directory).")
                 print(f"  {Fore.GREEN}back{Fore.RESET}                Return to the main menu.\n")
                 print(f"{Style.BRIGHT}Examples:")
-                print(f"  scan ~/Desktop/file.pdf")
-                print(f"  scan ~/Desktop/fake_pdf.pdf")
-                print(f"  scan ~/Desktop\n")
+                print(f"  scan ~/Desktop/example.pdf\n")
             elif action == "scan":
                 if not arg:
                     print(Fore.YELLOW + "[!] Missing path. Usage: scan <FILE or DIR>")
@@ -474,12 +469,11 @@ def run_validator_module():
             print()
             break
 
-
 # ==============================================================================
 # [MODULE 4: IMAGE METADATA & FORENSICS]
 # ==============================================================================
 def convert_to_degrees(value):
-    """Convert DMS (Degrees, Minutes, Seconds) tuples to decimal degrees."""
+    """Convert degrees, minutes, and seconds tuple to decimal coordinates."""
     try:
         d = float(value[0])
         m = float(value[1])
@@ -509,13 +503,13 @@ def analyze_image_metadata(img_path):
 
         print("\n" + Style.BRIGHT + f"─── [ Forensic Metadata: {os.path.basename(img_path)} ] ───")
         
-        # Extract hardware and software details
+        # Extract camera and software information
         print(f"  {Fore.CYAN}[+] Camera Make   :{Fore.RESET} {exif_data.get('Make', 'N/A')}")
         print(f"  {Fore.CYAN}[+] Camera Model  :{Fore.RESET} {exif_data.get('Model', 'N/A')}")
         print(f"  {Fore.CYAN}[+] Date Taken    :{Fore.RESET} {exif_data.get('DateTimeOriginal', exif_data.get('DateTime', 'N/A'))}")
         print(f"  {Fore.CYAN}[+] Software Used :{Fore.RESET} {exif_data.get('Software', 'N/A')}")
 
-        # Extract GPS coordinates
+        # Extract GPS metadata
         gps_info = exif_data.get("GPSInfo")
         if gps_info:
             gps_tags = {}
@@ -598,7 +592,7 @@ def main():
         elif choice == "2":
             run_ports_module()
         elif choice == "3":
-            run_validator_module()
+            run_hunter_module()
         elif choice == "4":
             run_metadata_module()
         elif choice in ["0", "exit", "quit"]:
