@@ -25,7 +25,6 @@ TraceScope is a lightweight, interactive CLI framework designed for Blue Teams, 
 
 ### 3. Extension Validator
 * Detects file extension spoofing and disguised malware using Magic Bytes inspection.
-* Identifies disguised Windows PE binaries (MZ) and Linux ELF executables (\x7fELF) masquerading as documents (.pdf, .docx, .xlsx) or images (.jpg, .png).
 * Flags executable scripts (Shebang #!, <?php) posing as media assets.
 * Supports recursive directory audits as well as single-file forensic inspection.
 
