@@ -49,9 +49,6 @@ cd Tracescope
 ### 2. Install Dependencies
 pip install -r requirements.txt
 
-Note for Kali Linux users: If your environment uses PEP 668 externally managed packages, install dependencies with:
-pip install -r requirements.txt --break-system-packages
-
 ---
 
 ## Usage
